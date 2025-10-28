@@ -22,14 +22,57 @@ export const placeBlock = (grid, block, row, col) => {
 };
 
 export const clearFullLines = (grid) => {
-  let newGrid = [...grid];
-  // Clear full rows
-  newGrid = newGrid.filter(row => row.some(cell => cell === 0));
-  while (newGrid.length < grid.length) newGrid.unshift(Array(grid[0].length).fill(0));
-  // Clear full columns (transpose, filter, transpose back)
-  const transposed = newGrid[0].map((_, col) => newGrid.map(row => row[col]));
-  const clearedTransposed = transposed.filter(col => col.some(cell => cell === 0));
-  while (clearedTransposed.length < transposed.length) clearedTransposed.unshift(Array(newGrid.length).fill(0));
-  newGrid = clearedTransposed[0].map((_, row) => clearedTransposed.map(col => col[row]));
-  return newGrid;
+  let newGrid = grid.map(r => [...r]);
+  let clearedRows = 0;
+  let clearedCols = 0;
+
+  const fullRows = [];
+  for (let i = 0; i < newGrid.length; i++) {
+    if (newGrid[i].every(cell => cell === 1)) {
+      fullRows.push(i);
+    }
+  }
+
+  const fullCols = [];
+  for (let j = 0; j < newGrid[0].length; j++) {
+    if (newGrid.every(row => row[j] === 1)) {
+      fullCols.push(j);
+    }
+  }
+
+  for (const row of fullRows) {
+    for (let j = 0; j < newGrid[row].length; j++) {
+      newGrid[row][j] = 0;
+    }
+    clearedRows++;
+  }
+
+  for (const col of fullCols) {
+    for (let i = 0; i < newGrid.length; i++) {
+      newGrid[i][col] = 0;
+    }
+    clearedCols++;
+  }
+
+  return { grid: newGrid, clearedRows, clearedCols, totalCleared: clearedRows + clearedCols };
+};
+
+export const calculateScore = (blockSize, linesCleared, combo = 1) => {
+  const baseScore = blockSize * 5;
+  const lineBonus = linesCleared * 100;
+  const comboMultiplier = combo > 1 ? combo * 1.5 : 1;
+  return Math.floor((baseScore + lineBonus) * comboMultiplier);
+};
+
+export const canPlaceAnyBlock = (grid, blocks) => {
+  for (const block of blocks) {
+    for (let row = 0; row < grid.length; row++) {
+      for (let col = 0; col < grid[0].length; col++) {
+        if (canPlaceBlock(grid, block.pattern, row, col)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 };
